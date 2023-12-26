@@ -1,5 +1,40 @@
 #!/bin/bash
 
+# Check if Docker is installed
+if ! command -v docker &> /dev/null; then
+    echo "Docker is not installed. Would you like to install Docker? (y/n)"
+    read -r answer
+    if [ "$answer" == "y" ]; then
+        # Set up Docker's apt repository
+        sudo apt-get update
+        sudo apt-get install ca-certificates curl gnupg zip
+        sudo install -m 0755 -d /etc/apt/keyrings
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+
+        # Add the repository to Apt sources
+        echo \
+          "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+          $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+          sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+        sudo apt-get update
+
+        # Install Docker Engine
+        sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+        # Add the current user to the Docker group
+        sudo usermod -aG docker $USER
+
+        # Verify the Docker Engine installation
+        sudo docker run hello-world
+    else
+        echo "Docker will not be installed."
+    fi
+else
+    echo "Docker is already installed."
+fi
+
+
+
 # Check for the existence of the deadsnakes PPA
 if ! grep -q "^deb .*/deadsnakes/ppa" /etc/apt/sources.list /etc/apt/sources.list.d/*; then
     echo "The deadsnakes PPA is not present. Adding it now..."
@@ -14,7 +49,7 @@ dpkg -l | grep -qw python3.11 || {
     echo "Python3.11 is not installed. Would you like to install it? (y/n)"
     read -r answer
     if [ "$answer" == "y" ]; then
-        sudo apt-get install -y python3.11
+        sudo apt-get install -y python3.11 zip
     else
         echo "Python3.11 will not be installed."
     fi
